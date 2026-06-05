@@ -1,0 +1,23 @@
+{
+  "name": "gb-rss-videomatic",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "version": "0.0.1",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@date-fns/tz": "^1.5.0",
+    "date-fns": "^4.4.0",
+    "prettier": "^3.8.3",
+    "rss-parser": "^3.13.0",
+    "sanitize-filename": "^1.6.4"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/vegeta897/gb-rss-videomatic#readme",
+  "issues": "https://github.com/vegeta897/gb-rss-videomatic/issues"
+}
