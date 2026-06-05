@@ -18,7 +18,7 @@ bun install
 
 Rename `config-init.json` to `config.json` and configure:
 
-```json
+```jsonc
 {
   // Videos will be downloaded here, within folders named after the shows
   "downloadRoot": "C:/Giant Bomb",
@@ -27,7 +27,7 @@ Rename `config-init.json` to `config.json` and configure:
   // I haven't tested the show-specific feeds but they should work
   // Don't put two different qualities of the same feed
   "feedUrls": [
-    "https://giantbomb.com/video-xml/premium-videos?api_key=example&quality=1080p"
+    "https://giantbomb.com/video-xml/premium-videos?api_key=example&quality=1080p",
   ],
 
   // List the shows you want to include
@@ -41,7 +41,7 @@ Rename `config-init.json` to `config.json` and configure:
   // The name of the library in Emby that contains your GB videos
   "embyLibraryName": "Giant Bomb",
   // The hostname of your Emby server (open your dashboard to check)
-  "embyHost": "localhost:8096"
+  "embyHost": "localhost:8096",
 }
 ```
 
