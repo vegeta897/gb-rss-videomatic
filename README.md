@@ -76,3 +76,8 @@ This downloads all videos of a specific show.
 ```bash
 bun run index.ts --show "Grubbsnax Premium"
 ```
+
+### Other options
+
+- `--feed "<feed-url>"` Use a specific feed URL instead of the one(s) in your config file
+- `--folder "<folder-name>"` Download everything to this folder instead of the show's name

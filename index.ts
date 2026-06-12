@@ -1,5 +1,4 @@
 import Parser from 'rss-parser'
-import { parseArgs } from 'util'
 import { refreshEmbyLibrary } from './emby'
 import config from './config.json'
 import {
@@ -11,24 +10,7 @@ import {
 } from './db'
 import { downloadItem } from './download'
 import { TZDate } from '@date-fns/tz'
-
-const {
-  values: { show, cutoff },
-} = parseArgs({
-  args: Bun.argv,
-  options: {
-    show: {
-      type: 'string',
-      short: 's',
-    },
-    cutoff: {
-      type: 'string',
-      short: 'c',
-    },
-  },
-  strict: true,
-  allowPositionals: true,
-})
+import { getCliOptions } from './cli'
 
 export type FeedItem = {
   creator: string
@@ -41,13 +23,20 @@ export type FeedItem = {
   guid: string
 }
 
-async function processFeeds(show?: string, cutoff?: string) {
+async function processFeeds(options: {
+  show?: string
+  cutoff?: string
+  video?: string
+  feed?: string
+  folder?: string
+}) {
   let needRefresh = false
   let totalDownloads = 0
   let totalFailed = 0
-  for (const feedUrl of config.feedUrls) {
+  const feedUrls = options.feed ? [options.feed] : config.feedUrls
+  for (const feedUrl of feedUrls) {
     console.log(
-      `Checking feed ${config.feedUrls.indexOf(feedUrl) + 1}/${config.feedUrls.length}`
+      `Checking feed ${feedUrls.indexOf(feedUrl) + 1}/${feedUrls.length}`
     )
     const { name, items } = await getFeedData(feedUrl)
     console.log(`Processing feed "${name}"`)
@@ -55,33 +44,38 @@ async function processFeeds(show?: string, cutoff?: string) {
       console.log(`Feed "${name}" returned empty, skipping`)
       continue
     }
-    const options: ProcessFeedOptions = {}
-    if (show) {
-      options.show = show
+    const feedItemsOptions: ProcessFeedItemsOptions = {}
+    if (options.folder) feedItemsOptions.folder = options.folder
+    if (options.video) {
+      feedItemsOptions.video = options.video
+    } else if (options.show) {
+      feedItemsOptions.show = options.show
     } else {
-      if (cutoff) {
-        const parts = cutoff.split('-').map((part) => +part)
-        options.cutoffDate = new TZDate(
+      if (options.cutoff) {
+        const parts = options.cutoff.split('-').map((part) => +part)
+        feedItemsOptions.cutoffDate = new TZDate(
           parts[0]!,
           parts[1]! - 1,
           parts[2]!,
           'America/Los_Angeles'
         )
       } else {
-        options.cutoffDate = getNewestItemDate(name)
+        feedItemsOptions.cutoffDate = getNewestItemDate(name)
       }
     }
     const { itemsDownloaded, failedDownloads, newestItemDate } =
-      await processFeedItems(items, options)
-    if (show && itemsDownloaded + failedDownloads === 0) {
-      console.log(`Show "${show}" not found in feed "${name}"`)
+      await processFeedItems(items, feedItemsOptions)
+    if (options.show && itemsDownloaded + failedDownloads === 0) {
+      console.log(`Show "${options.show}" not found in feed "${name}"`)
     }
     if (itemsDownloaded > 0) {
       needRefresh = true
       totalDownloads += itemsDownloaded
     }
     totalFailed += failedDownloads
-    if (!show && newestItemDate) updateNewestItemDate(name, newestItemDate)
+    if (!options.show && !options.video && newestItemDate) {
+      updateNewestItemDate(name, newestItemDate)
+    }
   }
   console.log(
     `Finished downloading ${totalDownloads}/${totalDownloads + totalFailed} video(s)`
@@ -97,31 +91,36 @@ async function getFeedData(url: string) {
   return { name: feed.title, items: feed.items as unknown as FeedItem[] }
 }
 
-interface ProcessFeedOptions {
+interface ProcessFeedItemsOptions {
   show?: string
   cutoffDate?: Date | false
+  video?: string
+  folder?: string
 }
 async function processFeedItems(
   items: FeedItem[],
-  options: ProcessFeedOptions
+  options: ProcessFeedItemsOptions
 ) {
   let itemsDownloaded = 0
   let failedDownloads = 0
   let newestItemDate: Date | undefined = undefined
   for (const item of items) {
+    if (options.video && item.title !== options.video) continue
     const itemDate = new Date(item.isoDate)
     if (options.cutoffDate && itemDate <= options.cutoffDate) break
-    if (!newestItemDate) newestItemDate = itemDate
-    if (show && item.creator !== show) continue
-    if (!show && !config.shows.includes(item.creator)) continue
+    if (!newestItemDate && !options.video) newestItemDate = itemDate
+    if (options.show && item.creator !== options.show) continue
+    if (!options.show && !options.video && !config.shows.includes(item.creator))
+      continue
     if (itemAlreadyDownloaded(item.guid)) continue
+    if (options.folder) item.creator = options.folder
     const success = await downloadItem(item)
     if (success) itemsDownloaded++
     else failedDownloads++
-    if (!options.show && !options.cutoffDate) break
+    if (!options.show && !options.cutoffDate && !options.video) break
   }
   return { itemsDownloaded, failedDownloads, newestItemDate }
 }
 
 await initDb()
-await processFeeds(show, cutoff)
+await processFeeds(getCliOptions())
