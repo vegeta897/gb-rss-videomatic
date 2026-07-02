@@ -15,7 +15,7 @@ export async function downloadItem(item: FeedItem) {
   if (contentLength === 0) contentLength = +item.enclosure.length
   const path = getFilepath(item)
   const existingFile = Bun.file(path)
-  if (existingFile.size === contentLength) {
+  if ((await existingFile.exists()) && existingFile.size === contentLength) {
     console.log(`File with matching name and size already exists at ${path}`)
   } else {
     let receivedLength = 0
