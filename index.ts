@@ -108,10 +108,10 @@ async function processFeedItems(
     if (options.video && item.title !== options.video) continue
     const itemDate = new Date(item.isoDate)
     if (options.cutoffDate && itemDate <= options.cutoffDate) break
-    if (!newestItemDate && !options.video) newestItemDate = itemDate
     if (options.show && item.creator !== options.show) continue
     if (!options.show && !options.video && !config.shows.includes(item.creator))
       continue
+    if (!newestItemDate && !options.video) newestItemDate = itemDate
     if (itemAlreadyDownloaded(item.guid)) continue
     if (options.folder) item.creator = options.folder
     const success = await downloadItem(item)
