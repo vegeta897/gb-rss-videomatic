@@ -21,7 +21,10 @@ export async function downloadItem(item: FeedItem) {
     let receivedLength = 0
     let percent = 0
     const chunks = []
-    console.log(`Downloading "${item.title}" (${item.guid})`)
+    const megabytes = Math.round(contentLength / 2 ** 20) // Divide bytes by 1024 twice
+    console.log(
+      `Downloading "${item.title}" (${item.guid}) - ${megabytes.toLocaleString()} MB`
+    )
     for await (const chunk of response.body) {
       chunks.push(chunk)
       receivedLength += chunk.length
