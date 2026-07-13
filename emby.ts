@@ -6,9 +6,7 @@ async function getLibraryId() {
   const libraryEndpoint = `${HOST}Library/MediaFolders?api_key=${embyApiKey}`
   const response = await fetch(libraryEndpoint)
   const libraryData: any = await response.json()
-  const library = libraryData.Items.find(
-    (item: any) => (item.Name = embyLibraryName)
-  )
+  const library = libraryData.Items.find((item: any) => (item.Name = embyLibraryName))
   if (!library) throw `Library "${embyLibraryName}" not found`
   return library.Id
 }

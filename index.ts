@@ -35,9 +35,7 @@ async function processFeeds(options: {
   let totalFailed = 0
   const feedUrls = options.feed ? [options.feed] : config.feedUrls
   for (const feedUrl of feedUrls) {
-    console.log(
-      `Checking feed ${feedUrls.indexOf(feedUrl) + 1}/${feedUrls.length}`
-    )
+    console.log(`Checking feed ${feedUrls.indexOf(feedUrl) + 1}/${feedUrls.length}`)
     const { name, items } = await getFeedData(feedUrl)
     console.log(`Processing feed "${name}"`)
     if (items.length === 0) {
@@ -63,8 +61,10 @@ async function processFeeds(options: {
         feedItemsOptions.cutoffDate = getNewestItemDate(name)
       }
     }
-    const { itemsDownloaded, failedDownloads, newestItemDate } =
-      await processFeedItems(items, feedItemsOptions)
+    const { itemsDownloaded, failedDownloads, newestItemDate } = await processFeedItems(
+      items,
+      feedItemsOptions
+    )
     if (options.show && itemsDownloaded + failedDownloads === 0) {
       console.log(`Show "${options.show}" not found in feed "${name}"`)
     }
@@ -97,10 +97,7 @@ interface ProcessFeedItemsOptions {
   video?: string
   folder?: string
 }
-async function processFeedItems(
-  items: FeedItem[],
-  options: ProcessFeedItemsOptions
-) {
+async function processFeedItems(items: FeedItem[], options: ProcessFeedItemsOptions) {
   let itemsDownloaded = 0
   let failedDownloads = 0
   let newestItemDate: Date | undefined = undefined
@@ -109,8 +106,7 @@ async function processFeedItems(
     const itemDate = new Date(item.isoDate)
     if (options.cutoffDate && itemDate <= options.cutoffDate) break
     if (options.show && item.creator !== options.show) continue
-    if (!options.show && !options.video && !config.shows.includes(item.creator))
-      continue
+    if (!options.show && !options.video && !config.shows.includes(item.creator)) continue
     if (!newestItemDate && !options.video) newestItemDate = itemDate
     if (itemAlreadyDownloaded(item.guid)) continue
     if (options.folder) item.creator = options.folder
