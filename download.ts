@@ -2,17 +2,18 @@ import sanitize from 'sanitize-filename'
 import { transpose, format } from 'date-fns'
 import { tz } from '@date-fns/tz'
 import { downloadRoot } from './config.json'
-import type { FeedItem } from '.'
+import type { FeedItem } from './feed'
 import { recordItemDownloaded } from './db'
 
 export async function downloadItem(item: FeedItem) {
-  const response = await fetch(item.enclosure.url)
+  const content = item.media[0].contents[0]
+  const response = await fetch(content.url)
   if (response.status !== 200 || !response.body) {
     console.warn(`Failed to download "${item.title}"`)
     return false
   }
   let contentLength = +(response.headers.get('Content-Length') ?? 0)
-  if (contentLength === 0) contentLength = +item.enclosure.length
+  if (contentLength === 0) contentLength = +content.fileSize
   const path = getFilepath(item)
   const existingFile = Bun.file(path)
   if ((await existingFile.exists()) && existingFile.size === contentLength) {
@@ -40,16 +41,16 @@ export async function downloadItem(item: FeedItem) {
     console.log(`Saving video to ${path}`)
     await Bun.write(path, blob)
   }
-  recordItemDownloaded(item.guid)
+  recordItemDownloaded(item.guid.value)
   return true
 }
 
 function getFilepath(item: FeedItem) {
   const pacificDate = transpose(
-    new Date(item.isoDate),
+    new Date(item.pubDate),
     tz('America/Los_Angeles') // Time-zone used by GB
   )
   const dateString = format(pacificDate, 'yyyy-MM-dd')
   const sanitizedTitle = sanitize(item.title.replaceAll('|', '-'))
-  return `${downloadRoot}/${item.creator}/${dateString} ${sanitizedTitle}.mp4`
+  return `${downloadRoot}/${item.dc.creator}/${dateString} ${sanitizedTitle}.mp4`
 }

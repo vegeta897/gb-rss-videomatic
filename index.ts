@@ -1,4 +1,3 @@
-import Parser from 'rss-parser'
 import { refreshEmbyLibrary } from './emby'
 import config from './config.json'
 import {
@@ -11,17 +10,7 @@ import {
 import { downloadItem } from './download'
 import { TZDate } from '@date-fns/tz'
 import { getCliOptions } from './cli'
-
-export type FeedItem = {
-  creator: string
-  title: string
-  isoDate: string
-  enclosure: {
-    url: string
-    length: string
-  }
-  guid: string
-}
+import { getFeedData, type FeedItem } from './feed'
 
 async function processFeeds(options: {
   show?: string
@@ -84,13 +73,6 @@ async function processFeeds(options: {
   await writeDb()
 }
 
-async function getFeedData(url: string) {
-  const parser = new Parser()
-  const feed = await parser.parseURL(url)
-  if (!feed.title) throw `Feed missing title! (${url})`
-  return { name: feed.title, items: feed.items as unknown as FeedItem[] }
-}
-
 interface ProcessFeedItemsOptions {
   show?: string
   cutoffDate?: Date | false
@@ -102,14 +84,26 @@ async function processFeedItems(items: FeedItem[], options: ProcessFeedItemsOpti
   let failedDownloads = 0
   let newestItemDate: Date | undefined = undefined
   for (const item of items) {
+    if (item.media.length === 0 || item.media[0].contents.length === 0) {
+      console.log(`WARNING: Item "${item.title}" has no content!`)
+      continue
+    }
+    const height = item.media[0].contents[0].height
+    if (height < 1080) {
+      console.log(
+        `NOTE: Item "${item.title}" is not HD quality (expected 1080p, got ${height}p)`
+      )
+      console.log(`Download the HD version at ${item.link}`)
+    }
     if (options.video && item.title !== options.video) continue
-    const itemDate = new Date(item.isoDate)
+    const itemDate = new Date(item.pubDate)
     if (options.cutoffDate && itemDate <= options.cutoffDate) break
-    if (options.show && item.creator !== options.show) continue
-    if (!options.show && !options.video && !config.shows.includes(item.creator)) continue
+    if (options.show && item.dc.creator !== options.show) continue
+    if (!options.show && !options.video && !config.shows.includes(item.dc.creator))
+      continue
     if (!newestItemDate && !options.video) newestItemDate = itemDate
-    if (itemAlreadyDownloaded(item.guid)) continue
-    if (options.folder) item.creator = options.folder
+    if (itemAlreadyDownloaded(item.guid.value)) continue
+    if (options.folder) item.dc.creator = options.folder
     const success = await downloadItem(item)
     if (success) itemsDownloaded++
     else failedDownloads++
