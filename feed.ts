@@ -10,13 +10,13 @@ export type FeedItem = {
   dc: {
     creator: string
   }
-  media: NonEmptyArray<{
+  media: {
     contents: NonEmptyArray<{
       url: string
       fileSize: number
       height: number
     }>
-  }>
+  }
 }
 
 export async function getFeedData(url: string) {

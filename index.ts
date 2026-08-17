@@ -84,11 +84,11 @@ async function processFeedItems(items: FeedItem[], options: ProcessFeedItemsOpti
   let failedDownloads = 0
   let newestItemDate: Date | undefined = undefined
   for (const item of items) {
-    if (item.media.length === 0 || item.media[0].contents.length === 0) {
+    if (item.media.contents.length === 0) {
       console.log(`WARNING: Item "${item.title}" has no content!`)
       continue
     }
-    const height = item.media[0].contents[0].height
+    const height = item.media.contents[0].height
     if (height < 1080) {
       console.log(
         `NOTE: Item "${item.title}" is not HD quality (expected 1080p, got ${height}p)`

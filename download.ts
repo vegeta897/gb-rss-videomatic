@@ -6,7 +6,7 @@ import type { FeedItem } from './feed'
 import { recordItemDownloaded } from './db'
 
 export async function downloadItem(item: FeedItem) {
-  const content = item.media[0].contents[0]
+  const content = item.media.contents[0]
   const response = await fetch(content.url)
   if (response.status !== 200 || !response.body) {
     console.warn(`Failed to download "${item.title}"`)
@@ -24,7 +24,7 @@ export async function downloadItem(item: FeedItem) {
     const chunks = []
     const megabytes = Math.round(contentLength / 2 ** 20) // Divide bytes by 1024 twice
     console.log(
-      `Downloading "${item.title}" (${item.guid}) - ${megabytes.toLocaleString()} MB`
+      `Downloading "${item.title}" (${item.guid.value}) - ${megabytes.toLocaleString()} MB`
     )
     for await (const chunk of response.body) {
       chunks.push(chunk)
