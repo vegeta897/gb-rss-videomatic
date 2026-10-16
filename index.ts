@@ -88,13 +88,6 @@ async function processFeedItems(items: FeedItem[], options: ProcessFeedItemsOpti
       console.log(`WARNING: Item "${item.title}" has no content!`)
       continue
     }
-    const height = item.media.contents[0].height
-    if (height < 1080) {
-      console.log(
-        `NOTE: Item "${item.title}" is not HD quality (expected 1080p, got ${height}p)`
-      )
-      console.log(`Download the HD version at ${item.link}`)
-    }
     if (options.video && item.title !== options.video) continue
     const itemDate = new Date(item.pubDate)
     if (options.cutoffDate && itemDate <= options.cutoffDate) break
@@ -104,6 +97,13 @@ async function processFeedItems(items: FeedItem[], options: ProcessFeedItemsOpti
     if (!newestItemDate && !options.video) newestItemDate = itemDate
     if (itemAlreadyDownloaded(item.guid.value)) continue
     if (options.folder) item.dc.creator = options.folder
+    const height = item.media.contents[0].height
+    if (height < 1080) {
+      console.log(
+        `NOTE: Item "${item.title}" is not HD quality (expected 1080p, got ${height}p)`
+      )
+      console.log(`Download the HD version at ${item.link}`)
+    }
     const success = await downloadItem(item)
     if (success) itemsDownloaded++
     else failedDownloads++
