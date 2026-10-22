@@ -21,13 +21,14 @@ export async function downloadItem(item: FeedItem) {
   } else {
     let receivedLength = 0
     let percent = 0
-    const chunks = []
     const megabytes = Math.round(contentLength / 2 ** 20) // Divide bytes by 1024 twice
     console.log(
       `Downloading "${item.title}" (${item.guid.value}) - ${megabytes.toLocaleString()} MB`
     )
+    const file = Bun.file(path)
+    const writer = file.writer()
     for await (const chunk of response.body) {
-      chunks.push(chunk)
+      writer.write(chunk)
       receivedLength += chunk.length
       const nextPercent = Math.floor((receivedLength / contentLength) * 100)
       if (nextPercent > percent) {
@@ -37,9 +38,8 @@ export async function downloadItem(item: FeedItem) {
       }
     }
     process.stdout.write('\r\x1b[K')
-    const blob = new Blob(chunks)
-    console.log(`Saving video to ${path}`)
-    await Bun.write(path, blob)
+    await writer.end()
+    console.log(`Video successfully downloaded to ${path}`)
   }
   recordItemDownloaded(item.guid.value)
   return true
